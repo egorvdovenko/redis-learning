@@ -1,35 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
+  <style>
+    .form {
+      width: 50%;
+      border: 1px dashed gray;
+      padding: 12px;
+      box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+    }
+  </style>
 </head>
+
 <body>
-  <button onclick="sendRequest()">
-    SEND_REQUEST
-  </button>
+  <h1>Text formatting</h1>
+  <form name="settings" class="form">
+    <h2>Settings:</h2>
+    <div class="form-field">
+      <label for="user">User:</label>
+      <input type="text" id="user" name="user">
+    </div>
+    <div class="form-field">
+      <label for="fontFamily">Font family:</label>
+      <input type="text" id="fontFamily" name="fontFamily">
+    </div>
+    <div class="form-field">
+      <label for="fontSize">Font size:</label>
+      <input type="text" id="fontSize" name="fontSize">
+    </div>
+    <div class="form-field">
+      <label for="fontWeight">Font weight:</label>
+      <input type="text" id="fontWeight" name="fontWeight">
+    </div>
+    <div class="form-field">
+      <label for="color">Color:</label>
+      <input type="text" id="color" name="color">
+    </div>
+    <button type="submit">
+      Save
+    </button>
+  </form>
+  <h2>User:</h2>
+  <form name="user" class="form">
+    <div class="form-field">
+      <select name="user">
+        <option selected disabled>Select or add settings for a new one...</option>
+      </select>
+    </div>
+  </form>
+  <h2>Text:</h2>
+  <form name="formatting" class="form">
+    <div class="form-field">
+      <input type="text" id="formattingText" name="formattingText">
+    </div>
+    <div class="form-field">
+      <span id="formattingResult">
+        Result of formatting will be here...
+      </span>
+    </div>
+  </form>
+
   <script>
-    async function sendRequest() {
-      const url = 'http://localhost:5010/set';
-      const data = { username: 'egor' };
+    const API_URL = 'http://localhost:5010'
+
+    const _settingsForm = document.querySelector('form[name="settings"]')
+    const _userSelect = document.querySelector('select[name="user"]')
+    const _formattingTextInput = document.querySelector('input[id="formattingText"]')
+    const _formattingResultSpan = document.querySelector('span[id="formattingResult"]')
+
+    _userSelect.addEventListener('change', getUserSettings)
+    _formattingTextInput.addEventListener('input', formatResult)
+    _settingsForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
 
       try {
-        const response = await fetch(url, {
+        await saveSettings()
+        await getUsers()
+
+        reset()
+      } catch (e) {
+        console.error('Error:', e)
+      }
+    })
+
+    getUsers()
+
+    async function saveSettings() {
+      const formData = new FormData(_settingsForm)
+      const data = {
+        settings: {
+          user: formData.get('user'),
+          fontFamily: formData.get('fontFamily'),
+          fontSize: formData.get('fontSize'),
+          fontWeight: formData.get('fontWeight'),
+          color: formData.get('color'),
+        }
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/settings`, {
           method: 'POST',
           body: JSON.stringify(data),
           headers: {
             'Content-Type': 'application/json'
           }
-        });
-        const json = await response.json();
+        })
 
-        console.log('Success:', JSON.stringify(json));
-      } catch (error) {
-        console.error('Error:', error);
+      } catch (e) {
+        console.error('Error:', e)
       }
+    }
+
+    async function getUsers() {
+      try {
+        const response = await fetch(`${API_URL}/users`)
+        const { users } = await response.json()
+
+        _userSelect.innerHTML = `
+          <option selected disabled>Select or add settings for a new one...</option>
+        `
+
+        users.forEach(user => {
+          const _option = document.createElement('option')
+
+          _option.value = user
+          _option.innerHTML = user
+
+          _userSelect.appendChild(_option)
+        })
+      } catch (e) {
+        console.error('Error:', e)
+      }
+    }
+
+    async function getUserSettings() {
+      const user = _userSelect.value
+
+      try {
+        const response = await fetch(`${API_URL}/settings/${user}`)
+        const { settings } = await response.json()
+
+        _formattingResultSpan.style.cssText = null
+        _settingsForm.user.value = user
+
+        for (let rule in settings) {
+          _formattingResultSpan.style[rule] = settings[rule]
+          _settingsForm[rule].value = settings[rule]
+        }
+      } catch (e) {
+        console.error('Error:', e)
+      }
+    }
+
+    function formatResult(e) {
+      _formattingResultSpan.innerHTML = 
+        e.target.value || 'Result of formatting will be here...'
+    }
+
+    function reset() {
+      _settingsForm.reset()
+
+      _formattingTextInput.value = ''
+      _formattingResultSpan.style.cssText = null
+      _formattingResultSpan.innerHTML = 'Result of formatting will be here...'
     }
   </script>
 </body>
+
 </html>
