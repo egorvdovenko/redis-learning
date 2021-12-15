@@ -1,10 +1,11 @@
 {
-  "name": "test",
+  "name": "redis-learning",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "run": "node server.js"
+    "server": "REDIS_HOST=localhost nodemon src/server.js",
+    "redis": "docker run -p 6379:6379 -d redis"
   },
   "author": "",
   "license": "ISC",
