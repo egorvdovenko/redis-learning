@@ -1,0 +1,29 @@
+version: "3.7"
+
+services:
+  server:
+    image: yodaskillme/redis-app
+    ports:
+      - 5010:5010
+    networks:
+      net:
+        ipv4_address: 172.26.0.1
+
+  database:
+    image: redis
+    ports:
+      - 6379:6379
+    volumes:
+      - data:/data
+    networks:
+      net:
+        ipv4_address: 172.26.0.2
+
+volumes:
+  data:
+
+networks:
+  net:
+    ipam:
+      config:
+        - subnet: 172.26.0.0/16
